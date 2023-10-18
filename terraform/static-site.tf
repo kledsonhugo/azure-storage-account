@@ -1,3 +1,9 @@
+resource "azurerm_resource_group" "rg-staticsite" {
+  provider = azurerm.cloud
+  name     = "rg-staticsite"
+  location = "eastus"
+}
+
 resource "azurerm_storage_account" "storage_account" {
   provider                 = azurerm.cloud
   name                     = var.storage_account_name
@@ -15,7 +21,7 @@ resource "azurerm_storage_account" "storage_account" {
 resource "azurerm_storage_blob" "index" {
   provider               = azurerm.cloud
   name                   = "index.html"
-  storage_account_name   = azurerm_storage_account.stracctstaticsite.name
+  storage_account_name   = azurerm_storage_account.storage_account.name
   storage_container_name = "$web"
   type                   = "Block"
   content_type           = "text/html"
@@ -25,7 +31,7 @@ resource "azurerm_storage_blob" "index" {
 resource "azurerm_storage_blob" "error" {
   provider               = azurerm.cloud
   name                   = "error.html"
-  storage_account_name   = azurerm_storage_account.stracctstaticsite.name
+  storage_account_name   = azurerm_storage_account.storage_account.name
   storage_container_name = "$web"
   type                   = "Block"
   content_type           = "text/html"
