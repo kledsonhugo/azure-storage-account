@@ -10,10 +10,12 @@ resource "azurerm_storage_account" "storage_account" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
-  static_website {
-    index_document     = "index.html"
-    error_404_document = "error.html"
-  }
+}
+
+resource "azurerm_storage_account_static_website" "static_website" {
+  storage_account_id = azurerm_storage_account.storage_account.id
+  index_document     = "index.html"
+  error_404_document = "error.html"
 }
  
 resource "azurerm_storage_blob" "index" {
