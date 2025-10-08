@@ -6,11 +6,10 @@ terraform {
     }
   }
   backend "azurerm" {
-    resource_group_name  = "rg-kbstaticsitetf"
-    storage_account_name = "kbstaticsitetf"
+    resource_group_name  = "rg-staticsitetf"
+    storage_account_name = "staticsitetfkb"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
-    # use_azuread_auth     = true
   }
 }
 
