@@ -6,8 +6,8 @@ terraform {
     }
   }
   backend "azurerm" {
-    resource_group_name  = "rg-staticsitetf"
-    storage_account_name = "staticsitetfkb"
+    resource_group_name  = "tfstate"
+    storage_account_name = "tfstate19309"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
@@ -15,7 +15,6 @@ terraform {
 
 provider "azurerm" {
   resource_provider_registrations = "none"
-  storage_use_azuread             = true
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false

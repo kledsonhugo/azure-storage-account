@@ -1,6 +1,6 @@
 resource "azurerm_resource_group" "rg-staticsite" {
   name     = "rg-staticsite"
-  location = "brazilsouth"
+  location = "eastus"
 }
 
 resource "azurerm_storage_account" "storage_account" {
