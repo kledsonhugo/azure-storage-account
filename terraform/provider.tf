@@ -5,6 +5,12 @@ terraform {
       version = ">= 4.47.0"
     }
   }
+  backend "azurerm" {
+    resource_group_name  = "rg-staticsitetf"
+    storage_account_name = "staticsitetfkb001"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
 }
 
 provider "azurerm" {
