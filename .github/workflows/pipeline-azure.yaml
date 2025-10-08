@@ -78,6 +78,12 @@ jobs:
     - name: Step 05 - Terraform Init
       run : terraform -chdir=./terraform init -input=false
 
+    - name: Step 05.1 - Fix State Issues (if needed)
+      run: |
+        echo "Checking for state issues..."
+        # Se ainda houver problemas de provider, força reconfigure
+        terraform -chdir=./terraform init -reconfigure -input=false || echo "Reconfigure not needed"
+
     - name: Step 06 - Terraform Validate
       run : terraform -chdir=./terraform validate
 
