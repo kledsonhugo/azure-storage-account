@@ -10,6 +10,8 @@ jobs:
   tf-run:
     name: Terraform on Azure
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
  
     steps:
 
@@ -24,9 +26,7 @@ jobs:
     - name: Step 04 - Authenticate with Azure
       uses: azure/login@v2
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Step 05 - Terraform Init
       run : terraform -chdir=./terraform init -input=false
