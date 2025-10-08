@@ -98,6 +98,21 @@ jobs:
       env:
         ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
 
+    - name: Step 07.1 - Clean Corrupted State (if needed)
+      run: |
+        echo "Checking for corrupted state..."
+        # Se o storage account existe mas está em estado corrupto, importar
+        if ! terraform -chdir=./terraform state show azurerm_storage_account.storage_account 2>/dev/null; then
+          echo "Storage account state not found or corrupted"
+          # Tentar importar se o recurso existe no Azure
+          az storage account show --name kbstaticsite --resource-group rg-staticsite --only-show-errors && \
+          terraform -chdir=./terraform import azurerm_storage_account.storage_account /subscriptions/5a58073a-33d2-4213-bddc-000bc2420739/resourceGroups/rg-staticsite/providers/Microsoft.Storage/storageAccounts/kbstaticsite || \
+          echo "No existing storage account to import"
+        fi
+      env:
+        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
+      continue-on-error: true
+
     - name: Step 08 - Terraform Apply
       run : terraform -chdir=./terraform apply -auto-approve -input=false tfplan
       env:

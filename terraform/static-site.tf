@@ -10,6 +10,10 @@ resource "azurerm_storage_account" "storage_account" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
+  
+  # Permitir keys temporariamente para criação
+  shared_access_key_enabled         = true
+  allow_nested_items_to_be_public   = true
 }
 
 resource "azurerm_storage_account_static_website" "static_website" {
