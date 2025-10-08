@@ -12,8 +12,8 @@ resource "azurerm_storage_account" "storage_account" {
   account_kind             = "StorageV2"
   
   # Permitir keys temporariamente para criação
-  shared_access_key_enabled         = true
-  allow_nested_items_to_be_public   = true
+  # shared_access_key_enabled         = true
+  # allow_nested_items_to_be_public   = true
 }
 
 resource "azurerm_storage_account_static_website" "static_website" {
@@ -29,6 +29,7 @@ resource "azurerm_storage_blob" "index" {
   type                   = "Block"
   content_type           = "text/html"
   source                 = "../app/index.html"
+  depends_on             = [azurerm_storage_account_static_website.static_website]
 }
 
 resource "azurerm_storage_blob" "error" {
@@ -38,4 +39,5 @@ resource "azurerm_storage_blob" "error" {
   type                   = "Block"
   content_type           = "text/html"
   source                 = "../app/error.html"
+  depends_on             = [azurerm_storage_account_static_website.static_website]
 }

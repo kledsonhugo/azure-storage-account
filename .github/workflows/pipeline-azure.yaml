@@ -28,97 +28,23 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Step 04.1 - Verify Azure Authentication
-      run: |
-        echo "Verifying Azure authentication..."
-        echo "Current account info:"
-        az account show
-        echo "Available subscriptions:"
-        az account list --output table
-
-    - name: Step 04.2 - Setup Storage Account Permissions
-      run: |
-        echo "Setting up Storage Account permissions for Terraform backend..."
-        
-        # Obter o Object ID do Service Principal atual
-        SP_OBJECT_ID=$(az ad sp show --id $(az account show --query user.name -o tsv) --query id -o tsv)
-        echo "Service Principal Object ID: $SP_OBJECT_ID"
-        
-        # Adicionar permissões no Storage Account
-        echo "Adding Storage Blob Data Contributor role..."
-        az role assignment create \
-          --assignee-object-id $SP_OBJECT_ID \
-          --assignee-principal-type ServicePrincipal \
-          --role "Storage Blob Data Contributor" \
-          --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-kbstaticsitetf/providers/Microsoft.Storage/storageAccounts/kbstaticsitetf" \
-          --only-show-errors || echo "Role assignment may already exist"
-        
-        # Verificar se o container existe, se não, criar
-        echo "Checking if tfstate container exists..."
-        az storage container show \
-          --name "tfstate" \
-          --account-name "kbstaticsitetf" \
-          --auth-mode login \
-          --only-show-errors || \
-        az storage container create \
-          --name "tfstate" \
-          --account-name "kbstaticsitetf" \
-          --auth-mode login \
-          --only-show-errors
-
-    - name: Step 04.3 - Verify Storage Access
-      run: |
-        echo "Verifying Storage Account access..."
-        az storage blob list \
-          --container-name "tfstate" \
-          --account-name "kbstaticsitetf" \
-          --auth-mode login \
-          --output table
-
     - name: Step 05 - Terraform Init
       run : terraform -chdir=./terraform init -input=false
-      env:
-        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
 
     - name: Step 05.1 - Fix State Issues (if needed)
       run: |
         echo "Checking for state issues..."
         # Se ainda houver problemas de provider, força reconfigure
         terraform -chdir=./terraform init -reconfigure -input=false || echo "Reconfigure not needed"
-      env:
-        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
 
     - name: Step 06 - Terraform Validate
       run : terraform -chdir=./terraform validate
-      env:
-        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
 
     - name: Step 07 - Terraform Plan
       run : terraform -chdir=./terraform plan -input=false -out tfplan
-      env:
-        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
-
-    - name: Step 07.1 - Clean Corrupted State (if needed)
-      run: |
-        echo "Checking for corrupted state..."
-        # Se o storage account existe mas está em estado corrupto, importar
-        if ! terraform -chdir=./terraform state show azurerm_storage_account.storage_account 2>/dev/null; then
-          echo "Storage account state not found or corrupted"
-          # Tentar importar se o recurso existe no Azure
-          az storage account show --name kbstaticsite --resource-group rg-staticsite --only-show-errors && \
-          terraform -chdir=./terraform import azurerm_storage_account.storage_account /subscriptions/5a58073a-33d2-4213-bddc-000bc2420739/resourceGroups/rg-staticsite/providers/Microsoft.Storage/storageAccounts/kbstaticsite || \
-          echo "No existing storage account to import"
-        fi
-      env:
-        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
-      continue-on-error: true
 
     - name: Step 08 - Terraform Apply
       run : terraform -chdir=./terraform apply -auto-approve -input=false tfplan
-      env:
-        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
 
     - name: Step 09 - Terraform Show
       run : terraform -chdir=./terraform show
-      env:
-        ARM_SUBSCRIPTION_ID: "5a58073a-33d2-4213-bddc-000bc2420739"
