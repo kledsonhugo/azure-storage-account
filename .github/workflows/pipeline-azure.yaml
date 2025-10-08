@@ -20,13 +20,25 @@ jobs:
       with:
         terraform_version: 1.13.3
 
-    - name: Step 03 - CheckOut GitHub Repo
+    - name: Step 02 - CheckOut GitHub Repo
       uses: actions/checkout@v4
 
-    - name: Step 04 - Authenticate with Azure
+    - name: Step 03 - Authenticate with Azure
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Step 04 - Set Terraform Environment Variables
+      run: |
+        CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')
+        CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')
+        TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')
+        SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')
+        
+        echo "ARM_CLIENT_ID=$CLIENT_ID" >> $GITHUB_ENV
+        echo "ARM_CLIENT_SECRET=$CLIENT_SECRET" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=$TENANT_ID" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=$SUBSCRIPTION_ID" >> $GITHUB_ENV
 
     - name: Step 05 - Terraform Init
       run : terraform -chdir=./terraform init -input=false
