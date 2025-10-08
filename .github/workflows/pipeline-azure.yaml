@@ -28,6 +28,53 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Step 04.1 - Verify Azure Authentication
+      run: |
+        echo "Verifying Azure authentication..."
+        echo "Current account info:"
+        az account show
+        echo "Available subscriptions:"
+        az account list --output table
+
+    - name: Step 04.2 - Setup Storage Account Permissions
+      run: |
+        echo "Setting up Storage Account permissions for Terraform backend..."
+        
+        # Obter o Object ID do Service Principal atual
+        SP_OBJECT_ID=$(az ad sp show --id $(az account show --query user.name -o tsv) --query id -o tsv)
+        echo "Service Principal Object ID: $SP_OBJECT_ID"
+        
+        # Adicionar permissões no Storage Account
+        echo "Adding Storage Blob Data Contributor role..."
+        az role assignment create \
+          --assignee-object-id $SP_OBJECT_ID \
+          --assignee-principal-type ServicePrincipal \
+          --role "Storage Blob Data Contributor" \
+          --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-kbstaticsitetf/providers/Microsoft.Storage/storageAccounts/kbstaticsitetf" \
+          --only-show-errors || echo "Role assignment may already exist"
+        
+        # Verificar se o container existe, se não, criar
+        echo "Checking if tfstate container exists..."
+        az storage container show \
+          --name "tfstate" \
+          --account-name "kbstaticsitetf" \
+          --auth-mode login \
+          --only-show-errors || \
+        az storage container create \
+          --name "tfstate" \
+          --account-name "kbstaticsitetf" \
+          --auth-mode login \
+          --only-show-errors
+
+    - name: Step 04.3 - Verify Storage Access
+      run: |
+        echo "Verifying Storage Account access..."
+        az storage blob list \
+          --container-name "tfstate" \
+          --account-name "kbstaticsitetf" \
+          --auth-mode login \
+          --output table
+
     - name: Step 05 - Terraform Init
       run : terraform -chdir=./terraform init -input=false
 
