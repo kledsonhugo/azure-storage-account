@@ -160,7 +160,7 @@ az ad sp create-for-rbac \
 
 4. **Clique em "Create fork"**
 
-### 5.2 Clone Local (Opcional)
+### 5.2 Clone Local
 
 ```bash
 # Clone seu fork
@@ -186,7 +186,7 @@ variable "storage_account_name" {
 - Entre 3 e 24 caracteres
 - Globalmente único no Azure
 
-#### 5.3.2 Configurar Backend do Terraform (Opcional)
+#### 5.3.2 Configurar Backend do Terraform
 
 Considere usar um backend remoto. Adicione ao `terraform/provider.tf`:
 
