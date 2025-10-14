@@ -30,13 +30,10 @@ jobs:
     #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Step 03 - Authenticate with Azure
-      uses: azure/login@v2
+      uses: azure/login@v1
       with:
-        client-id: ${{ secrets.ARM_CLIENT_ID }}
-        tenant-id: ${{ secrets.ARM_TENANT_ID }}
-        subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-
-    # - name: Step 04 - Set Terraform Environment Variables
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        enable-AzPSSession: false    # - name: Step 04 - Set Terraform Environment Variables
     #   run: |
     #     CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')
     #     CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')
