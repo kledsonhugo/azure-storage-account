@@ -24,10 +24,17 @@ jobs:
     - name: Step 02 - CheckOut GitHub Repo
       uses: actions/checkout@v4
 
+    # - name: Step 03 - Authenticate with Azure
+    #   uses: azure/login@v2
+    #   with:
+    #     creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Step 03 - Authenticate with Azure
       uses: azure/login@v2
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        client-id: ${{ secrets.ARM_CLIENT_ID }}
+        tenant-id: ${{ secrets.ARM_TENANT_ID }}
+        subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
     # - name: Step 04 - Set Terraform Environment Variables
     #   run: |
