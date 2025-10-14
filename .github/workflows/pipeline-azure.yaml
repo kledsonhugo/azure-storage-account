@@ -34,14 +34,13 @@ jobs:
     - name: Step 03 - Authenticate with Azure
       uses: azure/login@v2
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    # - name: Step 04 - Set Azure Environment Variables
-    #   run: |
-    #     echo "ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')" >> $GITHUB_ENV
-    #     echo "ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')" >> $GITHUB_ENV
-    #     echo "ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')" >> $GITHUB_ENV
-    #     echo "ARM_TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')" >> $GITHUB_ENV
+        creds: |
+          {
+            "clientId": "${{ secrets.ARM_CLIENT_ID }}",
+            "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
+            "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
+            "tenantId": "${{ secrets.ARM_TENANT_ID }}"
+          }
 
     - name: Step 05 - Terraform Init
       run: terraform -chdir=./terraform init -input=false
