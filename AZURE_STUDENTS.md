@@ -128,18 +128,73 @@ az ad sp create-for-rbac \
 }
 ```
 
+**⚠️ Importante**: Você precisará dos seguintes valores para criar os GitHub Secrets:
+- `clientId` → será usado em `ARM_CLIENT_ID`
+- `clientSecret` → será usado em `ARM_CLIENT_SECRET`
+- `subscriptionId` → será usado em `ARM_SUBSCRIPTION_ID`
+- `tenantId` → será usado em `ARM_TENANT_ID`
+
 ## 4. Configuração do GitHub Actions
 
-### 4.1 Criando GitHub Secret
+### 4.1 Criando GitHub Secrets Individuais
+
+Para melhor flexibilidade e segurança, vamos configurar as credenciais como secrets separados:
 
 1. **Vá para seu repositório** no GitHub
 2. **Clique em "Settings"** (aba do repositório)
 3. **No menu lateral**, clique em "Secrets and variables" > "Actions"
-4. **Clique em "New repository secret"**
-5. **Configure o secret**:
-   - Name: `AZURE_CREDENTIALS`
-   - Secret: Cole o JSON completo do Service Principal
-6. **Clique em "Add secret"**
+4. **Crie os seguintes secrets** (clique em "New repository secret" para cada um):
+
+   - **Name**: `ARM_CLIENT_ID`  
+     **Secret**: O valor de `clientId` do JSON do Service Principal
+   
+   - **Name**: `ARM_CLIENT_SECRET`  
+     **Secret**: O valor de `clientSecret` do JSON do Service Principal
+   
+   - **Name**: `ARM_SUBSCRIPTION_ID`  
+     **Secret**: O valor de `subscriptionId` do JSON do Service Principal
+   
+   - **Name**: `ARM_TENANT_ID`  
+     **Secret**: O valor de `tenantId` do JSON do Service Principal
+
+### 4.2 Vantagens desta Abordagem
+
+- **Flexibilidade**: Permite atualizar credenciais individuais sem recriar todo o JSON
+- **Reutilização**: As mesmas variáveis são usadas tanto para autenticação quanto para o Terraform
+- **Manutenibilidade**: Mais fácil de gerenciar e debugar
+- **Segurança**: Isolamento de cada credencial
+
+### 4.3 Como o Pipeline Funciona
+
+O GitHub Actions pipeline agora utiliza uma abordagem híbrida para autenticação:
+
+1. **Variáveis de ambiente globais**: Definidas no nível do workflow para uso do Terraform
+2. **Autenticação Azure CLI**: Construção dinâmica do JSON de credenciais
+3. **Terraform provider**: Utiliza automaticamente as variáveis ARM_*
+
+```yaml
+env:
+  TERRAFORM_VERSION: "1.13.3"
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+```
+
+O step de autenticação constrói o JSON dinamicamente:
+
+```yaml
+- name: Step 03 - Authenticate with Azure
+  uses: azure/login@v2
+  with:
+    creds: |
+      {
+        "clientId": "${{ secrets.ARM_CLIENT_ID }}",
+        "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
+        "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
+        "tenantId": "${{ secrets.ARM_TENANT_ID }}"
+      }
+```
 
 ## 5. Fork e Configuração do Projeto
 
@@ -339,7 +394,7 @@ az consumption usage list --output table
 
 #### Erro: "Invalid client secret"
 - **Recrie o client secret** no Azure Portal
-- **Atualize** o GitHub Secret `AZURE_CREDENTIALS`
+- **Atualize** o GitHub Secret `ARM_CLIENT_SECRET`
 
 #### Erro: "Insufficient privileges"
 ```bash
@@ -393,8 +448,27 @@ terraform refresh
 - **Verifique** se o step de Azure Login está configurado corretamente
 
 #### Erro: "Secret not found"
-- **Confirme** que o secret `AZURE_CREDENTIALS` existe
-- **Verifique** se o JSON está formatado corretamente
+- **Confirme** que os secrets `ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_SUBSCRIPTION_ID` e `ARM_TENANT_ID` existem
+- **Verifique** se os valores estão corretos e correspondem ao Service Principal criado
+
+#### Erro: "Subscription ID could not be determined"
+- **Verifique** se `ARM_SUBSCRIPTION_ID` está configurado corretamente
+- **Confirme** que o Service Principal tem acesso à subscription
+
+#### Erro: "Authentication failed"
+- **Recrie** o client secret do Service Principal no Azure Portal
+- **Atualize** o secret `ARM_CLIENT_SECRET` no GitHub
+
+#### Problemas com variáveis de ambiente
+```bash
+# Para debugar, adicione este step temporário no pipeline:
+- name: Debug Environment Variables
+  run: |
+    echo "ARM_CLIENT_ID is set: ${{ env.ARM_CLIENT_ID != '' }}"
+    echo "ARM_SUBSCRIPTION_ID is set: ${{ env.ARM_SUBSCRIPTION_ID != '' }}"
+    echo "ARM_TENANT_ID is set: ${{ env.ARM_TENANT_ID != '' }}"
+    # Nunca imprima ARM_CLIENT_SECRET por segurança
+```
 
 ### 7.6 Verificação de Recursos Criados
 
