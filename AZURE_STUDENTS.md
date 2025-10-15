@@ -7,10 +7,10 @@ Este guia descreve como estudantes podem obter acesso gratuito ao Azure, configu
 1. [Inscrição no Azure for Students](#1-inscrição-no-azure-for-students)
 2. [Primeiro Acesso ao Portal Azure](#2-primeiro-acesso-ao-portal-azure)
 3. [Criação de Service Principal](#3-criação-de-service-principal)
-4. [Configuração do GitHub Actions](#4-configuração-do-github-actions) 🆕 **Pipeline atualizado**
-5. [Fork e Configuração do Projeto](#5-fork-e-configuração-do-projeto) 🆕 **Backend com Azure AD**
+4. [Configuração do GitHub Actions](#4-configuração-do-github-actions)
+5. [Fork e Configuração do Projeto](#5-fork-e-configuração-do-projeto)
 6. [Executando o Terraform](#6-executando-o-terraform)
-7. [Solução de Problemas](#7-solução-de-problemas) 🆕 **Seção expandida com novas soluções**
+7. [Solução de Problemas](#7-solução-de-problemas)
 
 ---
 
@@ -102,17 +102,6 @@ Um Service Principal é necessário para que o GitHub Actions possa se autentica
 3. **Execute os comandos a seguir**:
 
 ```bash
-# Defina variáveis (substitua pelos seus valores)
-SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-SP_NAME="github-actions-sp"
-
-# Crie o Service Principal
-az ad sp create-for-rbac \
-  --name $SP_NAME \
-  --role contributor \
-  --scopes /subscriptions/$SUBSCRIPTION_ID \
-  --sdk-auth
-```
 
 4. **Copie e guarde o output JSON** (será usado no GitHub):
 
@@ -136,6 +125,8 @@ az ad sp create-for-rbac \
 - `clientSecret` → será usado em `ARM_CLIENT_SECRET`
 - `subscriptionId` → será usado em `ARM_SUBSCRIPTION_ID`
 - `tenantId` → será usado em `ARM_TENANT_ID`
+
+---
 
 ## 4. Configuração do GitHub Actions
 
@@ -170,20 +161,7 @@ Para melhor flexibilidade e segurança, vamos configurar as credenciais como sec
 - **Manutenibilidade**: Mais fácil de gerenciar e debugar
 - **Segurança**: Isolamento de cada credencial
 
-### 4.3 Como o Pipeline Funciona
-
-O GitHub Actions pipeline utiliza uma abordagem segura e moderna para autenticação e configuração automática:
-
-#### 📋 **Variáveis de Ambiente:**
-
-```yaml
-env:
-  TERRAFORM_VERSION: "1.13.3"
-  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-```
+---
 
 ## 5. Fork e Configuração do Projeto
 
@@ -261,10 +239,6 @@ variable "storage_account_name" {
 - Apenas letras minúsculas e números
 - Entre 3 e 24 caracteres
 - Globalmente único no Azure
-
-### 5.4 Personalização do Site
-
-Modifique `app/index.html` para personalizar seu site.
 
 ---
 
@@ -376,7 +350,7 @@ az role assignment create \
 - **Verifique** se `ARM_SUBSCRIPTION_ID` está configurado corretamente
 - **Confirme** que o Service Principal tem acesso à subscription
 
-## �📚 Recursos Adicionais
+## 📚 Recursos Adicionais
 
 - [Documentação Azure for Students](https://docs.microsoft.com/pt-br/azure/education/)
 - [Azure Static Web Apps](https://docs.microsoft.com/pt-br/azure/static-web-apps/)
