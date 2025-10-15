@@ -7,16 +7,17 @@ Este guia descreve como estudantes podem obter acesso gratuito ao Azure, configu
 1. [Inscrição no Azure for Students](#1-inscrição-no-azure-for-students)
 2. [Primeiro Acesso ao Portal Azure](#2-primeiro-acesso-ao-portal-azure)
 3. [Criação de Service Principal](#3-criação-de-service-principal)
-4. [Configuração do GitHub Actions](#4-configuração-do-github-actions)
-5. [Fork e Configuração do Projeto](#5-fork-e-configuração-do-projeto)
+4. [Configuração do GitHub Actions](#4-configuração-do-github-actions) 🆕 **Pipeline atualizado**
+5. [Fork e Configuração do Projeto](#5-fork-e-configuração-do-projeto) 🆕 **Backend com Azure AD**
 6. [Executando o Terraform](#6-executando-o-terraform)
-7. [Solução de Problemas](#7-solução-de-problemas)
+7. [Solução de Problemas](#7-solução-de-problemas) 🆕 **Seção expandida com novas soluções**
 
 ---
 
 ## 1. Inscrição no Azure for Students
 
 ### 1.1 Requisitos
+
 - **E-mail institucional**: Você deve ter um e-mail de uma instituição educacional reconhecida
 - **Verificação acadêmica**: Documento que comprove que você é estudante (carteirinha, declaração de matrícula, etc.). Esse documento poderá ser solicitado durante a inscrição.
 
@@ -48,6 +49,7 @@ Este guia descreve como estudantes podem obter acesso gratuito ao Azure, configu
    - Verificação manual: 1-3 dias úteis
 
 ### 1.3 Benefícios do Azure for Students
+
 - **$100 USD em créditos**: Válidos por 12 meses
 - **Serviços gratuitos**: Muitos serviços Azure gratuitos durante 12 meses
 - **Sem cartão de crédito**: Não é necessário fornecer cartão de crédito
@@ -113,6 +115,7 @@ az ad sp create-for-rbac \
 ```
 
 4. **Copie e guarde o output JSON** (será usado no GitHub):
+
 ```json
 {
   "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
@@ -141,8 +144,11 @@ az ad sp create-for-rbac \
 Para melhor flexibilidade e segurança, vamos configurar as credenciais como secrets separados:
 
 1. **Vá para seu repositório** no GitHub
+
 2. **Clique em "Settings"** (aba do repositório)
+
 3. **No menu lateral**, clique em "Secrets and variables" > "Actions"
+
 4. **Crie os seguintes secrets** (clique em "New repository secret" para cada um):
 
    - **Name**: `ARM_CLIENT_ID`  
@@ -166,11 +172,9 @@ Para melhor flexibilidade e segurança, vamos configurar as credenciais como sec
 
 ### 4.3 Como o Pipeline Funciona
 
-O GitHub Actions pipeline agora utiliza uma abordagem híbrida para autenticação:
+O GitHub Actions pipeline utiliza uma abordagem segura e moderna para autenticação e configuração automática:
 
-1. **Variáveis de ambiente globais**: Definidas no nível do workflow para uso do Terraform
-2. **Autenticação Azure CLI**: Construção dinâmica do JSON de credenciais
-3. **Terraform provider**: Utiliza automaticamente as variáveis ARM_*
+#### 📋 **Variáveis de Ambiente:**
 
 ```yaml
 env:
@@ -179,21 +183,6 @@ env:
   ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
   ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-```
-
-O step de autenticação constrói o JSON dinamicamente:
-
-```yaml
-- name: Step 03 - Authenticate with Azure
-  uses: azure/login@v2
-  with:
-    creds: |
-      {
-        "clientId": "${{ secrets.ARM_CLIENT_ID }}",
-        "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
-        "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
-        "tenantId": "${{ secrets.ARM_TENANT_ID }}"
-      }
 ```
 
 ## 5. Fork e Configuração do Projeto
@@ -225,14 +214,46 @@ cd azure-storage-account
 
 ### 5.3 Configurações Necessárias
 
-#### 5.3.1 Ajustar Nome da Storage Account
+#### 5.3.1 Configurar Backend do Terraform
 
-O nome da storage account deve ser **globalmente único**. Edite o arquivo `terraform/vars.tf`:
+O arquivo `terraform/provider.tf` contém uma configuração de exemplo do backend.
+
+Ajuste o valor do parâmetro `storage_account_name` com o nome do Storage Account que você criou para armazenar o estado da execução do Terraform.
+
+```terraform
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 4.47.0"
+    }
+  }
+  backend "azurerm" {
+    resource_group_name  = "rg-staticsitetf"
+    storage_account_name = "staticsitetfkb002"     # Use sua data ou adicione números aleatórios
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+}
+
+provider "azurerm" {
+  resource_provider_registrations = "none"
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+```
+
+#### 5.3.2 Ajustar Nome da Storage Account
+
+Edite o arquivo `terraform/vars.tf`:
 
 ```terraform
 variable "storage_account_name" {
     type    = string
-    default = "staticsitestudent20241011"  # Use sua data ou adicione números aleatórios
+    default = "staticsitekb002"      # Use sua data ou adicione números aleatórios
 }
 ```
 
@@ -241,99 +262,9 @@ variable "storage_account_name" {
 - Entre 3 e 24 caracteres
 - Globalmente único no Azure
 
-#### 5.3.2 Configurar Backend do Terraform
-
-Considere usar um backend remoto. Adicione ao `terraform/provider.tf`:
-
-```terraform
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "rg-terraform-state"
-    storage_account_name = "terraformstateXXXXX"  # Substitua XXXXX
-    container_name       = "tfstate"
-    key                  = "staticsite.terraform.tfstate"
-  }
-}
-```
-
 ### 5.4 Personalização do Site
 
-#### 5.4.1 Editar index.html
-
-Modifique `app/index.html` para personalizar seu site:
-
-```html
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Site Estático - Azure for Students</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: 100vh;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .info {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 1rem;
-            border-radius: 5px;
-            margin: 1rem 0;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🎓 Meu Site no Azure for Students</h1>
-        
-        <div class="info">
-            <h2>Sobre este projeto</h2>
-            <p>Este site estático foi deployado usando:</p>
-            <ul>
-                <li>Azure Storage Account (Static Website)</li>
-                <li>Terraform para Infrastructure as Code</li>
-                <li>GitHub Actions para CI/CD</li>
-                <li>Azure for Students (créditos gratuitos)</li>
-            </ul>
-        </div>
-        
-        <div class="info">
-            <h2>Tecnologias utilizadas</h2>
-            <ul>
-                <li>HTML5 e CSS3</li>
-                <li>Azure Storage Static Website</li>
-                <li>Terraform</li>
-                <li>GitHub Actions</li>
-            </ul>
-        </div>
-        
-        <div class="info">
-            <p><strong>Deployado com Azure for Students!</strong></p>
-            <p>Data do deploy: <span id="deploy-date"></span></p>
-        </div>
-    </div>
-    
-    <script>
-        document.getElementById('deploy-date').textContent = new Date().toLocaleString('pt-BR');
-    </script>
-</body>
-</html>
-```
+Modifique `app/index.html` para personalizar seu site.
 
 ---
 
@@ -348,14 +279,19 @@ O workflow será executado automaticamente a cada push na branch `main`.
 #### 6.2.1 GitHub Actions Logs
 
 1. **Acesse a aba "Actions"**
+
 2. **Clique no run** mais recente
+
 3. **Expand cada step** para ver logs detalhados
 
 #### 6.2.2 Azure Portal
 
 1. **Acesse o portal Azure**
+
 2. **Procure por "Resource groups"**
+
 3. **Clique em "rg-staticsite"**
+
 4. **Verifique** se os recursos foram criados:
    - Storage Account
    - Static Website
@@ -363,8 +299,11 @@ O workflow será executado automaticamente a cada push na branch `main`.
 ### 6.3 Acessando seu Site
 
 1. **No Azure Portal**, vá para sua Storage Account
+
 2. **No menu lateral**, clique em "Static website"
+
 3. **Copie** a URL do "Primary endpoint"
+
 4. **Acesse** a URL no navegador
 
 Exemplo de URL: `https://staticsitestudent20241011.z13.web.core.windows.net/`
@@ -376,6 +315,7 @@ Exemplo de URL: `https://staticsitestudent20241011.z13.web.core.windows.net/`
 ### 7.1 Problemas Comuns de Subscription
 
 #### Erro: "Subscription not found"
+
 ```bash
 # Liste suas subscriptions
 az account list --output table
@@ -385,6 +325,7 @@ az account set --subscription "Azure for Students"
 ```
 
 #### Erro: "Insufficient credits"
+
 ```bash
 # Verifique seus créditos restantes
 az consumption usage list --output table
@@ -393,10 +334,12 @@ az consumption usage list --output table
 ### 7.2 Problemas de Service Principal
 
 #### Erro: "Invalid client secret"
+
 - **Recrie o client secret** no Azure Portal
 - **Atualize** o GitHub Secret `ARM_CLIENT_SECRET`
 
 #### Erro: "Insufficient privileges"
+
 ```bash
 # Verifique as roles do Service Principal
 az role assignment list --assignee CLIENT_ID --output table
@@ -411,81 +354,29 @@ az role assignment create \
 ### 7.3 Problemas de Storage Account
 
 #### Erro: "Storage account name already exists"
+
 - **Altere** o nome da storage account em `vars.tf`
 - **Use** uma combinação única (ex: `staticsitestudent` + timestamp)
 
 #### Erro: "Invalid storage account name"
+
 - **Apenas** letras minúsculas e números
 - **Entre** 3 e 24 caracteres
 - **Sem** caracteres especiais ou espaços
 
-### 7.4 Problemas de Terraform
-
-#### Erro: "Provider configuration not present"
-```bash
-# Reinicialize o Terraform
-terraform init -upgrade
-```
-
-#### Erro: "Error acquiring state lock"
-```bash
-# Force unlock (use com cuidado)
-terraform force-unlock LOCK_ID
-```
-
-#### Estado corrompido
-```bash
-# Importe recursos existentes
-terraform import azurerm_resource_group.rg-staticsite /subscriptions/SUBSCRIPTION_ID/resourceGroups/rg-staticsite
-
-# Ou recrie o estado
-terraform refresh
-```
-
-### 7.5 Problemas de GitHub Actions
-
-#### Erro: "Azure CLI not found"
-- **Verifique** se o step de Azure Login está configurado corretamente
+### 7.4 Problemas de GitHub Actions
 
 #### Erro: "Secret not found"
+
 - **Confirme** que os secrets `ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_SUBSCRIPTION_ID` e `ARM_TENANT_ID` existem
 - **Verifique** se os valores estão corretos e correspondem ao Service Principal criado
 
 #### Erro: "Subscription ID could not be determined"
+
 - **Verifique** se `ARM_SUBSCRIPTION_ID` está configurado corretamente
 - **Confirme** que o Service Principal tem acesso à subscription
 
-#### Erro: "Authentication failed"
-- **Recrie** o client secret do Service Principal no Azure Portal
-- **Atualize** o secret `ARM_CLIENT_SECRET` no GitHub
-
-#### Problemas com variáveis de ambiente
-```bash
-# Para debugar, adicione este step temporário no pipeline:
-- name: Debug Environment Variables
-  run: |
-    echo "ARM_CLIENT_ID is set: ${{ env.ARM_CLIENT_ID != '' }}"
-    echo "ARM_SUBSCRIPTION_ID is set: ${{ env.ARM_SUBSCRIPTION_ID != '' }}"
-    echo "ARM_TENANT_ID is set: ${{ env.ARM_TENANT_ID != '' }}"
-    # Nunca imprima ARM_CLIENT_SECRET por segurança
-```
-
-### 7.6 Verificação de Recursos Criados
-
-```bash
-# Liste todos os resource groups
-az group list --output table
-
-# Liste recursos em um resource group específico
-az resource list --resource-group rg-staticsite --output table
-
-# Obtenha detalhes da storage account
-az storage account show --name STORAGE_ACCOUNT_NAME --resource-group rg-staticsite
-```
-
----
-
-## 📚 Recursos Adicionais
+## �📚 Recursos Adicionais
 
 - [Documentação Azure for Students](https://docs.microsoft.com/pt-br/azure/education/)
 - [Azure Static Web Apps](https://docs.microsoft.com/pt-br/azure/static-web-apps/)
