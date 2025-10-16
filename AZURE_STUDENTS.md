@@ -102,6 +102,8 @@ Um Service Principal é necessário para que o GitHub Actions possa se autentica
 3. **Execute os comandos a seguir**:
 
 ```bash
+az ad sp create-for-rbac --name az-terraform --role Contributor --scopes /subscriptions/subscription-id
+```
 
 4. **Copie e guarde o output JSON** (será usado no GitHub):
 
