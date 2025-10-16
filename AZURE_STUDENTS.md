@@ -48,13 +48,6 @@ Este guia descreve como estudantes podem obter acesso gratuito ao Azure, configu
    - Verificação automática: Imediata
    - Verificação manual: 1-3 dias úteis
 
-### 1.3 Benefícios do Azure for Students
-
-- **$100 USD em créditos**: Válidos por 12 meses
-- **Serviços gratuitos**: Muitos serviços Azure gratuitos durante 12 meses
-- **Sem cartão de crédito**: Não é necessário fornecer cartão de crédito
-- **Renovação**: Pode ser renovado anualmente enquanto for estudante
-
 ---
 
 ## 2. Primeiro Acesso ao Portal Azure
@@ -99,75 +92,36 @@ Um Service Principal é necessário para que o GitHub Actions possa se autentica
 
 2. **Escolha Bash** quando solicitado
 
-3. **Execute os comandos a seguir**:
+3. **Execute o comando a seguir**:
+
+Substitua `nome` pelo seu nome e `subscription-id` pelo ID da Subscription. Você pode obtê-la acessando Subscription na barra de busca no meu superior da Azure.
 
 ```bash
-az ad sp create-for-rbac --name az-terraform --role Contributor --scopes /subscriptions/subscription-id
+az ad sp create-for-rbac --name az-terraform-nome --role Contributor --scopes /subscriptions/subscription-id
 ```
 
 4. **Copie e guarde o output JSON** (será usado no GitHub):
 
 ```json
 {
-  "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "clientSecret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
-  "resourceManagerEndpointUrl": "https://management.azure.com/",
-  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
-  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
-  "galleryEndpointUrl": "https://gallery.azure.com/",
-  "managementEndpointUrl": "https://management.core.windows.net/"
+  "appId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "displayName": "az-terraform-nome",
+  "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "tenant": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 ```
 
 **⚠️ Importante**: Você precisará dos seguintes valores para criar os GitHub Secrets:
-- `clientId` → será usado em `ARM_CLIENT_ID`
-- `clientSecret` → será usado em `ARM_CLIENT_SECRET`
-- `subscriptionId` → será usado em `ARM_SUBSCRIPTION_ID`
-- `tenantId` → será usado em `ARM_TENANT_ID`
+- `appId` → será usado em `ARM_CLIENT_ID`
+- `password` → será usado em `ARM_CLIENT_SECRET`
+- `tenant` → será usado em `ARM_TENANT_ID`
+- ID da Subscrição → será usado em `ARM_SUBSCRIPTION_ID`
 
 ---
 
-## 4. Configuração do GitHub Actions
+## 4. Fork e Configuração do Projeto
 
-### 4.1 Criando GitHub Secrets Individuais
-
-Para melhor flexibilidade e segurança, vamos configurar as credenciais como secrets separados:
-
-1. **Vá para seu repositório** no GitHub
-
-2. **Clique em "Settings"** (aba do repositório)
-
-3. **No menu lateral**, clique em "Secrets and variables" > "Actions"
-
-4. **Crie os seguintes secrets** (clique em "New repository secret" para cada um):
-
-   - **Name**: `ARM_CLIENT_ID`  
-     **Secret**: O valor de `clientId` do JSON do Service Principal
-   
-   - **Name**: `ARM_CLIENT_SECRET`  
-     **Secret**: O valor de `clientSecret` do JSON do Service Principal
-   
-   - **Name**: `ARM_SUBSCRIPTION_ID`  
-     **Secret**: O valor de `subscriptionId` do JSON do Service Principal
-   
-   - **Name**: `ARM_TENANT_ID`  
-     **Secret**: O valor de `tenantId` do JSON do Service Principal
-
-### 4.2 Vantagens desta Abordagem
-
-- **Flexibilidade**: Permite atualizar credenciais individuais sem recriar todo o JSON
-- **Reutilização**: As mesmas variáveis são usadas tanto para autenticação quanto para o Terraform
-- **Manutenibilidade**: Mais fácil de gerenciar e debugar
-- **Segurança**: Isolamento de cada credencial
-
----
-
-## 5. Fork e Configuração do Projeto
-
-### 5.1 Fork do Repositório
+### 4.1 Fork do Repositório
 
 1. **Vá para o repositório original**:
    ```
@@ -184,7 +138,7 @@ Para melhor flexibilidade e segurança, vamos configurar as credenciais como sec
 
 4. **Clique em "Create fork"**
 
-### 5.2 Clone Local
+### 4.2 Clone Local
 
 ```bash
 # Clone seu fork
@@ -192,13 +146,15 @@ git clone https://github.com/SEU_USERNAME/azure-storage-account.git
 cd azure-storage-account
 ```
 
-### 5.3 Configurações Necessárias
+### 4.3 Configurações Necessárias
 
-#### 5.3.1 Configurar Backend do Terraform
+Abra o Visual Studio Code e realize as configurações necessárias.
+
+#### 4.3.1 Configurar Backend do Terraform
 
 O arquivo `terraform/provider.tf` contém uma configuração de exemplo do backend.
 
-Ajuste o valor do parâmetro `storage_account_name` com o nome do Storage Account que você criou para armazenar o estado da execução do Terraform.
+Crie o backend do Terraform e ajuste o valor do parâmetro `storage_account_name` com o nome do Storage Account que você criou para armazenar o estado da execução do Terraform.
 
 ```terraform
 terraform {
@@ -226,7 +182,7 @@ provider "azurerm" {
 }
 ```
 
-#### 5.3.2 Ajustar Nome da Storage Account
+#### 4.3.2 Ajustar Nome da Storage Account
 
 Edite o arquivo `terraform/vars.tf`:
 
@@ -241,6 +197,34 @@ variable "storage_account_name" {
 - Apenas letras minúsculas e números
 - Entre 3 e 24 caracteres
 - Globalmente único no Azure
+
+---
+
+## 5. Configuração do GitHub Actions
+
+### 5.1 Criando GitHub Secrets Individuais
+
+Para melhor flexibilidade e segurança, vamos configurar as credenciais como secrets separados:
+
+1. **Vá para seu repositório** no GitHub
+
+2. **Clique em "Settings"** (aba do repositório)
+
+3. **No menu lateral**, clique em "Secrets and variables" > "Actions"
+
+4. **Crie os seguintes secrets** (clique em "New repository secret" para cada um):
+
+   - **Name**: `ARM_CLIENT_ID`  
+     **Secret**: O valor de `clientId` do JSON do Service Principal
+   
+   - **Name**: `ARM_CLIENT_SECRET`  
+     **Secret**: O valor de `clientSecret` do JSON do Service Principal
+   
+   - **Name**: `ARM_SUBSCRIPTION_ID`  
+     **Secret**: O valor de `subscriptionId` do JSON do Service Principal
+   
+   - **Name**: `ARM_TENANT_ID`  
+     **Secret**: O valor de `tenantId` do JSON do Service Principal
 
 ---
 
@@ -259,26 +243,6 @@ O workflow será executado automaticamente a cada push na branch `main`.
 2. **Clique no run** mais recente
 
 3. **Expand cada step** para ver logs detalhados
-
-#### 6.2.2 Azure Portal
-
-1. **Acesse o portal Azure**
-
-2. **Procure por "Resource groups"**
-
-3. **Clique em "rg-staticsite"**
-
-4. **Verifique** se os recursos foram criados:
-   - Storage Account
-   - Static Website
-
-### 6.3 Acessando seu Site
-
-1. **No Azure Portal**, vá para sua Storage Account
-
-2. **No menu lateral**, clique em "Static website"
-
-3. **Copie** a URL do "Primary endpoint"
 
 4. **Acesse** a URL no navegador
 
